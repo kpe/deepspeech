@@ -1,3 +1,7 @@
+# tl;dnr
+
+trying to decode with a character level n-gram language model (KenLM) and a prefix beam search
+
 # Implementation of Deep Speech 2 in neon
 
 This repository contains an implementation of Baidu SVAIL's [deep speech 2](https://arxiv.org/abs/1512.02595) model in neon. Much of the model is readily available in mainline neon, but to support the CTC cost function we have included a neon-compatible wrapper for Baidu's [Warp-CTC].

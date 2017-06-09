@@ -24,7 +24,7 @@ from neon.util.argparser import NeonArgparser, extract_valid_args
 from neon.models import Model
 from neon.data.dataloader_transformers import TypeCast, Retuple
 
-from decoder import ArgMaxDecoder
+from decoder import ArgMaxDecoder, BeamDecoder
 from utils import get_wer
 
 
@@ -55,8 +55,10 @@ if "val" not in args.manifest:
 
 # Setup parameters for argmax decoder
 alphabet = "_'ABCDEFGHIJKLMNOPQRSTUVWXYZ "
+beam_alphabet = alphabet.lower().replace(' ','#')
 nout = len(alphabet)
 argmax_decoder = ArgMaxDecoder(alphabet, space_index=alphabet.index(" "))
+beam_decoder = BeamDecoder('./model.kenlm',beam_alphabet,space_index=alphabet.index(" "))
 
 # Initialize our backend
 be = gen_backend(**extract_valid_args(args, gen_backend))
@@ -99,7 +101,9 @@ eval_set = data_transform(eval_set)
 model = Model(args.model_file)
 
 # Process data and compute stats
-wer, sample_size, results = get_wer(model, be, eval_set, argmax_decoder, nout,
+wer, sample_size, results = get_wer(model, be, eval_set,
+                                    beam_decoder,
+                                    nout,
                                     use_wer=args.use_wer)
 
 print("\n" + "-" * 80)
@@ -112,5 +116,5 @@ print("-" * 80 + "\n")
 if args.inference_file:
     # Save results in args.inference_file
     with open(args.inference_file, 'wb') as f:
-        pkl.dump((results, wer), f)
+        pkl.dump((results, wer), f, protocol=0)
     print("Saved inference results to {}".format(args.inference_file))

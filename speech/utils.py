@@ -52,7 +52,7 @@ def get_wer(model, be, dataset, decoder, nout, use_wer=False):
 
     if not model.initialized:
         model.initialize(dataset)
- 
+
     for x, y in dataset:
         probs = get_outputs(model, be, x, nout)
         strided_tmax = probs.shape[-1]
@@ -60,22 +60,24 @@ def get_wer(model, be, dataset, decoder, nout, use_wer=False):
         tscrpt_lens = y[1].get().ravel()
         utt_lens = strided_tmax * y[2].get().ravel() / 100
         for mu in range(be.bsz):
-            prediction = decoder.decode(probs[mu, :, :utt_lens[mu]])
+            prediction = decoder.decode(probs[mu, :, :int(utt_lens[mu])])
             start = int(np.sum(tscrpt_lens[:mu]))
             target = flat_labels[start:start + tscrpt_lens[mu]].tolist()
             target = decrypt(decoder, target)
             predictions.append(prediction)
             targets.append(target)
+            print('pred:[{}]'.format(prediction))
+            print('targ:[{}]'.format(target))
             if not use_wer:
                 wer += decoder.cer(prediction, target) / float(len(target))
             else:
                 wer += decoder.wer(prediction, target) / \
                         float(len(target.split()))
-        
+
         progress_string = get_progress_string(be.bsz, batchcount, nbatches)
         last_strlen = len(progress_string)
         sys.stdout.write('\r' + ' ' * last_strlen + '\r')
-        sys.stdout.write(progress_string.encode("utf-8"))
+        sys.stdout.write(progress_string)
         sys.stdout.flush()
         batchcount += 1
 

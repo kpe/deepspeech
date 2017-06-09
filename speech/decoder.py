@@ -17,6 +17,8 @@
 import numpy as np
 import Levenshtein as Lev
 
+import pyximport; pyximport.install(setup_args={'include_dirs':[np.get_include()]})
+from beam_decoder import  CharLMBeamDecoder
 
 class Decoder(object):
     """
@@ -129,3 +131,18 @@ class ArgMaxDecoder(Decoder):
         """
         string = self.convert_to_string(np.argmax(probs, axis=0))
         return self.process_string(string, remove_repetitions=True)
+
+
+class BeamDecoder(Decoder):
+    def __init__(self, model_file="./model.kenlm",alphabet="_'abcdefghijklmnopqrstuvwxyz#", space_index=28,blank_index=0):
+        super(BeamDecoder, self).__init__(alphabet, blank_index, space_index)
+        self.decoder = CharLMBeamDecoder(model_file, alphabet, blank_index, space_index)
+
+    def decode(self, probs, beam=50, alpha=0.7, beta=1.7):
+        """
+        Returns beam search prefix decoding by incorporating a
+        char level n-gram KenLM language model.
+        """
+        cprobs = np.asfortranarray(probs.astype(np.double))
+        prediction,_ = self.decoder.decode(cprobs, alpha=alpha, beta=beta, beam=beam)
+        return prediction
